@@ -107,11 +107,18 @@ jobs:
     needs: [check-version, build-and-release]
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          path: all-artifacts
-
+          name: Celechron-ubuntu-latest
+          path: linux-artifact
+  
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Celechron-windows-latest
+          path: windows-artifact
+  
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -123,12 +130,13 @@ jobs:
             - Windows executable
             - Linux binary
           files: |
-            all-artifacts/**
-
+            linux-artifact/**
+            windows-artifact/**
+  
       - name: Save last released version
         run: |
           echo "${{ needs.check-version.outputs.release_tag }}" > LAST_RELEASED_VERSION.txt
-
+  
       - name: Commit version record
         run: |
           git config user.name github-actions
@@ -137,3 +145,4 @@ jobs:
           git add LAST_RELEASED_VERSION.txt
           git commit -m "Update last released version: ${{ needs.check-version.outputs.release_tag }}"
           git push
+  
