@@ -1,0 +1,128 @@
+name: Build and Release Celechron
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 每小时检查一次
+  workflow_dispatch:      # 可手动触发
+
+env:
+  UPSTREAM_REPO: Celechron/Celechron  # 上游仓库
+  FLUTTER_VERSION: '3.22.0'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.check.outputs.release_tag }}
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+
+      - name: Check latest release from upstream
+        id: check
+        run: |
+          set -e
+          API="https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest"
+          TAG=$(curl -s $API | jq -r .tag_name)
+          echo "Upstream latest tag: $TAG"
+          echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+
+          LAST=$(cat LAST_RELEASED_VERSION.txt 2>/dev/null || echo "")
+          echo "Last processed tag: $LAST"
+
+          if [ "$TAG" != "$LAST" ]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-release:
+    needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    name: Build and Release (${{ matrix.os }})
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+
+      - name: Clone upstream repo
+        run: |
+          git clone --depth 1 --branch ${{ needs.check-version.outputs.release_tag }} https://github.com/${{ env.UPSTREAM_REPO }} upstream
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+
+      - name: Enable desktop support
+        run: |
+          flutter config --enable-linux-desktop --enable-windows-desktop
+
+      - name: Install dependencies
+        run: |
+          cd upstream
+          flutter pub get
+
+      - name: Build Flutter app (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          cd upstream
+          flutter build linux
+          mkdir -p ../artifacts/linux
+          cp -r build/linux/x64/release/bundle/* ../artifacts/linux/
+
+      - name: Build Flutter app (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cd upstream
+          flutter build windows
+          mkdir -p ../artifacts/windows
+          Copy-Item -Path "build/windows/runner/Release/*" -Destination "../artifacts/windows/" -Recurse -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Celechron-${{ matrix.os }}
+          path: artifacts/**
+
+  release:
+    needs: [check-version, build-and-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.check-version.outputs.release_tag }}
+          name: "Repackaged: ${{ needs.check-version.outputs.release_tag }}"
+          body: |
+            This is a re-packaged release of `${{ env.UPSTREAM_REPO }}` version `${{ needs.check-version.outputs.release_tag }}`.
+            Contains:
+            - Windows executable
+            - Linux binary
+          files: |
+            all-artifacts/**
+
+      - name: Save last released version
+        run: |
+          echo "${{ needs.check-version.outputs.release_tag }}" > LAST_RELEASED_VERSION.txt
+
+      - name: Commit version record
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git pull --rebase
+          git add LAST_RELEASED_VERSION.txt
+          git commit -m "Update last released version: ${{ needs.check-version.outputs.release_tag }}"
+          git push
