@@ -135,7 +135,7 @@ jobs:
             - Windows executable
             - Linux binary
           files: |
-            Celechron-linux-${{ needs.check-version.outputs.release_tag }}.zip
+            Celechron-linux-${{ needs.check-version.outputs.release_tag }}.tar.gz
             Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip
 
   update-last-version:
