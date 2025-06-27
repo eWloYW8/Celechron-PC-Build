@@ -121,8 +121,8 @@ jobs:
 
       - name: Create zip archives
         run: |
-          cd linux-artifact && zip -r ../Celechron-linux-${{ needs.check-version.outputs.release_tag }}.zip . && cd ..
-          cd windows-artifact && zip -r ../Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip . && cd ..
+          cd linux-artifact && tar -czf ../Celechron-linux-${{ needs.check-version.outputs.release_tag }}.tar.gz linux/ && cd ..
+          cd windows-artifact && zip -r ../Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip windows/ && cd ..
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -138,18 +138,25 @@ jobs:
             Celechron-linux-${{ needs.check-version.outputs.release_tag }}.zip
             Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip
 
+  update-last-version:
+    needs: [check-version, build-and-release]
+    runs-on: ubuntu-22.04
+    steps:
       - name: Checkout current repo
         uses: actions/checkout@v3
       
-      - name: Save last released version
-        run: |
-          echo "${{ needs.check-version.outputs.release_tag }}" > LAST_RELEASED_VERSION.txt
-
-      - name: Commit version record
+      - name: Pull latest changes
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git pull --rebase
+      
+      - name: Save last released version
+        run: |
+          echo "${{ needs.check-version.outputs.release_tag }}" > LAST_RELEASED_VERSION.txt
+      
+      - name: Commit version record
+        run: |
           git add LAST_RELEASED_VERSION.txt
           git commit -m "Update last released version: ${{ needs.check-version.outputs.release_tag }}"
           git push
