@@ -118,21 +118,26 @@ jobs:
         with:
           name: Celechron-windows-latest
           path: windows-artifact
-  
+
+      - name: Create zip archives
+        run: |
+          cd linux-artifact && zip -r ../Celechron-linux-${{ needs.check-version.outputs.release_tag }}.zip . && cd ..
+          cd windows-artifact && zip -r ../Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip . && cd ..
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.check-version.outputs.release_tag }}
-          name: "Repackaged: ${{ needs.check-version.outputs.release_tag }}"
+          name: "${{ needs.check-version.outputs.release_tag }}"
           body: |
-            This is a re-packaged release of `${{ env.UPSTREAM_REPO }}` version `${{ needs.check-version.outputs.release_tag }}`.
+            This is a release of `${{ env.UPSTREAM_REPO }}` version `${{ needs.check-version.outputs.release_tag }}`.
             Contains:
             - Windows executable
             - Linux binary
           files: |
-            linux-artifact/**
-            windows-artifact/**
-  
+            Celechron-linux-${{ needs.check-version.outputs.release_tag }}.zip
+            Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip
+
       - name: Save last released version
         run: |
           echo "${{ needs.check-version.outputs.release_tag }}" > LAST_RELEASED_VERSION.txt
