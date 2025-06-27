@@ -95,7 +95,7 @@ jobs:
           cd upstream
           flutter build windows
           mkdir -p ../artifacts/windows
-          Copy-Item -Path "build/windows/runner/Release/*" -Destination "../artifacts/windows/" -Recurse -Force
+          Copy-Item -Path "build/windows/x64/runner/Release/*" -Destination "../artifacts/windows/" -Recurse -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
