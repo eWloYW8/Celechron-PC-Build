@@ -7,7 +7,6 @@ on:
 
 env:
   UPSTREAM_REPO: Celechron/Celechron  # 上游仓库
-  FLUTTER_VERSION: '3.22.0'
 
 jobs:
   check-version:
@@ -56,7 +55,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
 
       - name: Enable desktop support
