@@ -68,6 +68,12 @@ jobs:
           cd upstream
           flutter pub get
 
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev clang cmake ninja-build pkg-config liblzma-dev
+
       - name: Build Flutter app (Linux)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
