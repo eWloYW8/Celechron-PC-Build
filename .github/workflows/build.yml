@@ -138,10 +138,13 @@ jobs:
             Celechron-linux-${{ needs.check-version.outputs.release_tag }}.zip
             Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip
 
+      - name: Checkout current repo
+        uses: actions/checkout@v3
+      
       - name: Save last released version
         run: |
           echo "${{ needs.check-version.outputs.release_tag }}" > LAST_RELEASED_VERSION.txt
-  
+
       - name: Commit version record
         run: |
           git config user.name github-actions
