@@ -10,7 +10,7 @@ env:
 
 jobs:
   check-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       release_tag: ${{ steps.check.outputs.release_tag }}
       should_build: ${{ steps.check.outputs.should_build }}
@@ -41,7 +41,7 @@ jobs:
     if: needs.check-version.outputs.should_build == 'true'
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-22.04, windows-latest]
     runs-on: ${{ matrix.os }}
     name: Build and Release (${{ matrix.os }})
     steps:
@@ -67,7 +67,7 @@ jobs:
           flutter pub get
 
       - name: Install Linux build dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -80,7 +80,7 @@ jobs:
             liblzma-dev
 
       - name: Build Flutter app (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-22.04'
         shell: bash
         run: |
           cd upstream
@@ -105,12 +105,12 @@ jobs:
 
   release:
     needs: [check-version, build-and-release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: Celechron-ubuntu-latest
+          name: Celechron-ubuntu-22.04
           path: linux-artifact
   
       - name: Download Windows artifact
