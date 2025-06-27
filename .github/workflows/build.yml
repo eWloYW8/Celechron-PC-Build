@@ -2,7 +2,7 @@ name: Build and Release Celechron
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 每小时检查一次
+    - cron: '0 0 * * *'  # 每天检查一次
   workflow_dispatch:      # 可手动触发
 
 env:
@@ -121,8 +121,8 @@ jobs:
 
       - name: Create zip archives
         run: |
-          cd linux-artifact && tar -czf ../Celechron-linux-${{ needs.check-version.outputs.release_tag }}.tar.gz linux/ && cd ..
-          cd windows-artifact && zip -r ../Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip windows/ && cd ..
+            cd linux-artifact/linux && tar -czf ../../Celechron-linux-${{ needs.check-version.outputs.release_tag }}.tar.gz * && cd ../..
+            cd windows-artifact/windows && zip -r ../../Celechron-windows-${{ needs.check-version.outputs.release_tag }}.zip * && cd ../..
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
