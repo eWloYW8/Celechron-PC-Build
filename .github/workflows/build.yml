@@ -40,10 +40,10 @@ jobs:
   build-and-release:
     needs: check-version
     if: needs.check-version.outputs.should_build == 'true'
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     name: Build and Release (${{ matrix.os }})
     steps:
       - name: Checkout current repo
